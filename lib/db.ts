@@ -136,3 +136,12 @@ export async function getChatHistory(projectId: string) {
   const project = await db.get(STORE_NAME, projectId);
   return project?.chatHistory?.messages || [];
 }
+
+export async function executeQuery(dbUrl: string, query: string): Promise<any> {
+  // TODO: Implement actual database query execution
+  // For now, return mock data
+  return [
+    { table_name: 'users', table_schema: 'public' },
+    { table_name: 'products', table_schema: 'public' },
+  ];
+}

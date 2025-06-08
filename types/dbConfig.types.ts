@@ -31,3 +31,13 @@ export interface ProjectData extends FormData {
     }>;
   };
 }
+
+export interface DatabaseChatProps {
+  dbUrl: string
+  schema: any
+  provider: string
+  model: string
+  llmApiKey?: string
+  projectId: string
+  dbType: string
+}

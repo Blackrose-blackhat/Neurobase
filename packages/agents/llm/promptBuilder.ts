@@ -47,7 +47,11 @@ The query plan format:
 }
 
 User prompt: ${prompt}
-
+important : Take a good look at all the schema fields when a query appears to show all the data of a 
+praticular table or collection show only meaningful data like to get all users query probably show only 
+name email and other only 3-4 fields depening upon your priority we don't need to show id it is important to 
+how atleast name and email , do not show fields with large text like description or bio also do not show images
+also do not show any id or _id
 Respond ONLY with the query plan JSON, no explanations.
 `.trim();
 }
@@ -73,7 +77,14 @@ Important notes:
 - Do not hallucinate tables or fields.
 - Output only valid JSON representing a query plan.
 - Use SQL WHERE syntax for filters (e.g., "id = 1 AND name = 'John'").
-- For SELECT, specify "fields" as an array of field names.
+- For SELECT queries:
+  - Be precise and selective with field selection
+  - When user asks to "show all users" or similar general queries:
+    - Select only 2-3 most important identifying fields (e.g., id and name/username)
+    - DO NOT use SELECT * or include all fields
+    - Exclude sensitive fields, large text fields, and binary data
+  - Only include additional fields if specifically requested by the user
+  - If user asks for specific fields, include only those fields
 - For INSERT/UPDATE, specify "values" as an object of field-value pairs.
 - For DELETE/UPDATE, specify "where" as a SQL condition string.
 

@@ -79,3 +79,4 @@ export function detectDbType(dbUrl: string): string {
   }
   return 'unknown';
 } 
+
