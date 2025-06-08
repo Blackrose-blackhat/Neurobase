@@ -7,10 +7,12 @@ export interface ConfigFields {
 }
 
 export interface FormData {
-  name:string
+  name: string;
   dbType: "postgres" | "mongodb";
   dbUrl: string;
   llmApiKey: string;
+  provider: string;
+  model: string;
   config: ConfigFields;
 }
 

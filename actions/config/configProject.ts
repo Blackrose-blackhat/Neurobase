@@ -30,28 +30,42 @@ async function introspectDatabase(dbUrl: string) {
 }
 
 export async function handleConfigSubmit(
-  e: React.FormEvent<HTMLFormElement>,
+  e: React.FormEvent,
   formData: FormData,
   onSubmit?: (data: ProjectData) => void
-): Promise<void> {
+) {
   e.preventDefault();
-
+  
   try {
+    // Validate required fields
+    if (!formData.name || !formData.dbUrl || !formData.llmApiKey || !formData.provider || !formData.model) {
+      throw new Error('Please fill in all required fields');
+    }
+
     // First introspect the database
     const schema = await introspectDatabase(formData.dbUrl);
-    console.log('Schema:', schema);
-    const projectData: ProjectData = {
-      id: generateUniqueId(),
-      createdAt: new Date().toISOString(),
-      ...formData,
-      schema // Add the schema to the project data
-    };
 
-    await saveProject(projectData);
-    console.log("Project saved with id:", projectData.id);
-    onSubmit?.(projectData);
+    // Save to IndexedDB with the schema
+    const project = await saveProject({
+      id: generateUniqueId(),
+      name: formData.name,
+      dbType: formData.dbType,
+      dbUrl: formData.dbUrl,
+      llmApiKey: formData.llmApiKey,
+      provider: formData.provider,
+      model: formData.model,
+      schema: schema,
+      config: formData.config || {},
+      createdAt: new Date().toISOString()
+    });
+
+    if (onSubmit) {
+      onSubmit(project);
+    }
+
+    return project;
   } catch (error) {
-    console.error("Failed to save project:", error);
+    console.error('Failed to save project:', error);
     throw error;
   }
 }

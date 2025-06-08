@@ -47,7 +47,7 @@ export async function generatePostgresPlan({
     provider === "openai"
       ? openai(model === "gpt-4" ? "gpt-4" : "gpt-3.5-turbo-instruct")
       : provider === "gemini"
-      ? google(model)
+      ? google(model === "gemini-2.0-flash" ? "gemini-2.0-flash" : "gemini-1.5-flash")
       : undefined;
 
   if (!modelConfig) {

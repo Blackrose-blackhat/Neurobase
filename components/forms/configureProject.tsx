@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"; // shadcn input
 import { useFormData } from "@/hooks/useFormData";
@@ -9,6 +9,7 @@ import { AdvancedSettings } from "../configure/AdvancesSettings";
 import { DatabaseTypeSelector } from "../configure/DatabaseTypeSelector";
 import { DatabaseUrlInput } from "../configure/DatabaseUrlInput";
 import { LlmApiKeyInput } from "../configure/LlmApiKeyInput";
+import { Loader2 } from "lucide-react";
 
 import { FormData, ProjectData } from "@/types/dbConfig.types";
 import { handleConfigSubmit } from "@/actions/config/configProject";
@@ -31,7 +32,8 @@ export const ConfigureProjectForm: React.FC<ConfigureProjectFormProps> = ({
     updateFormData,
     updateConfig,
   } = useFormData();
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   // Initialize form with provided data
   useEffect(() => {
     if (initialData) {
@@ -79,10 +81,18 @@ export const ConfigureProjectForm: React.FC<ConfigureProjectFormProps> = ({
 
   // Local submit handler
   const handleSubmit = async (e: React.FormEvent) => {
-    const result = await handleConfigSubmit(e, formData, onSubmit);
-    // Optionally check result for errors before closing
-    console.log("Form submitted with result:", result);
-    if (onClose) onClose();
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      await handleConfigSubmit(e, formData, onSubmit);
+      if (onClose) onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to save project');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -103,6 +113,9 @@ export const ConfigureProjectForm: React.FC<ConfigureProjectFormProps> = ({
           placeholder="Enter project name"
           required
         />
+         {error && (
+          <p className="text-red-500 text-sm mt-1">{error}</p>
+        )}
       </div>
 
       <DatabaseTypeSelector
@@ -118,7 +131,12 @@ export const ConfigureProjectForm: React.FC<ConfigureProjectFormProps> = ({
 
       <LlmApiKeyInput
         value={formData.llmApiKey}
-        onChange={(key) => updateFormData({ llmApiKey: key })}
+        selectedModel={formData.model}
+        onChange={(key, provider, model) => updateFormData({ 
+          llmApiKey: key, 
+          provider,
+          model 
+        })}
       />
       <AdvancedSettings
         config={formData.config}
@@ -128,7 +146,16 @@ export const ConfigureProjectForm: React.FC<ConfigureProjectFormProps> = ({
       />
 
       <div className="pt-2 text-right">
-        <Button type="submit">Connect & Save</Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Connecting...
+            </>
+          ) : (
+            "Connect & Save"
+          )}
+        </Button>
       </div>
     </form>
   );
