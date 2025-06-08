@@ -8,6 +8,9 @@ const DB_VERSION = 1;
 const STORE_NAME = "projects";
 const CHAT_STORE_NAME = "chats";
 
+let dbConnection: IDBDatabase | null = null;
+let isConnecting = false;
+let connectionPromise: Promise<IDBDatabase> | null = null;
 
 export interface ProjectData {
   id: string;
@@ -42,34 +45,80 @@ interface MyDB extends DBSchema {
   };
 }
 
-let dbPromise: Promise<IDBPDatabase<MyDB>> | null = null;
+async function getDatabase(): Promise<IDBDatabase> {
+  if (dbConnection && dbConnection.readyState === 'open') {
+    return dbConnection;
+  }
 
-async function getDB() {
-  if (!dbPromise) {
-    dbPromise = openDB<MyDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, { keyPath: "id" });
-        }
-        if (!db.objectStoreNames.contains(CHAT_STORE_NAME)) {
-          db.createObjectStore(CHAT_STORE_NAME);
-        }
-      },
-    });
+  if (isConnecting && connectionPromise) {
+    return connectionPromise;
   }
-  try {
-    return await dbPromise;
-  } catch (e) {
-    // If the connection is closing or closed, reset and retry once
-    dbPromise = null;
-    return getDB();
+
+  isConnecting = true;
+  connectionPromise = new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+
+    request.onerror = () => {
+      isConnecting = false;
+      connectionPromise = null;
+      reject(new Error('Failed to open database'));
+    };
+
+    request.onsuccess = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      dbConnection = db;
+      isConnecting = false;
+      resolve(db);
+    };
+
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
+    };
+  });
+
+  return connectionPromise;
+}
+
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries = 3,
+  delay = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      if (error instanceof Error && error.message.includes('database connection is closing')) {
+        // Reset connection if it's closing
+        dbConnection = null;
+        connectionPromise = null;
+        await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+        continue;
+      }
+      throw error;
+    }
   }
+  
+  throw lastError;
 }
 
 // Add this new function to check for duplicate names
 export async function isProjectNameExists(name: string, currentProjectId?: string): Promise<boolean> {
-  const db = await getDB();
-  const allProjects = await db.getAll(STORE_NAME);
+  const db = await getDatabase();
+  const allProjects = await new Promise<ProjectData[]>((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.getAll();
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(new Error('Failed to get all projects'));
+  });
   return allProjects.some(project => 
     project.name === name && project.id !== currentProjectId
   );
@@ -93,37 +142,65 @@ export async function saveProject(project: ProjectData, skipNameCheck: boolean =
       : undefined,
   };
 
-  const db = await getDB();
-  await db.put(STORE_NAME, encryptedProject);
+  return withRetry(async () => {
+    const db = await getDatabase();
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    await store.put(encryptedProject);
+  });
 }
 
 export async function getProject(id: string): Promise<ProjectData | undefined> {
-  const db = await getDB();
-  const encryptedProject = await db.get(STORE_NAME, id);
-  if (!encryptedProject) return undefined;
+  return withRetry(async () => {
+    const db = await getDatabase();
+    const encryptedProject = await new Promise<ProjectData | undefined>((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.get(id);
 
-  return {
-    ...encryptedProject,
-    dbUrl: await decryptData(SECRET_KEY, encryptedProject.dbUrl),
-    llmApiKey: encryptedProject.llmApiKey
-      ? await decryptData(SECRET_KEY, encryptedProject.llmApiKey)
-      : undefined,
-  };
+      request.onsuccess = () => resolve(request.result || undefined);
+      request.onerror = () => reject(new Error('Failed to get project'));
+    });
+
+    if (!encryptedProject) return undefined;
+
+    return {
+      ...encryptedProject,
+      dbUrl: await decryptData(SECRET_KEY, encryptedProject.dbUrl),
+      llmApiKey: encryptedProject.llmApiKey
+        ? await decryptData(SECRET_KEY, encryptedProject.llmApiKey)
+        : undefined,
+    };
+  });
 }
 
 export async function saveChat(projectId: string, messages: any[]) {
-  const db = await getDB();
-  await db.put(CHAT_STORE_NAME, messages, projectId);
+  const db = await getDatabase();
+  await new Promise((resolve, reject) => {
+    const transaction = db.transaction([CHAT_STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(CHAT_STORE_NAME);
+    const request = store.put(messages, projectId);
+
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(new Error('Failed to save chat'));
+  });
 }
 
 export async function getChat(projectId: string) {
-  const db = await getDB();
-  return await db.get(CHAT_STORE_NAME, projectId);
+  const db = await getDatabase();
+  return await new Promise<any[]>((resolve, reject) => {
+    const transaction = db.transaction([CHAT_STORE_NAME], 'readonly');
+    const store = transaction.objectStore(CHAT_STORE_NAME);
+    const request = store.get(projectId);
+
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(new Error('Failed to get chat'));
+  });
 }
 
 export async function saveChatHistory(projectId: string, messages: any[]) {
-  const db = await getDB();
-  const project = await db.get(STORE_NAME, projectId);
+  const db = await getDatabase();
+  const project = await getProject(projectId);
   
   if (project) {
     project.chatHistory = { messages };
@@ -132,8 +209,8 @@ export async function saveChatHistory(projectId: string, messages: any[]) {
 }
 
 export async function getChatHistory(projectId: string) {
-  const db = await getDB();
-  const project = await db.get(STORE_NAME, projectId);
+  const db = await getDatabase();
+  const project = await getProject(projectId);
   return project?.chatHistory?.messages || [];
 }
 
@@ -144,4 +221,20 @@ export async function executeQuery(dbUrl: string, query: string): Promise<any> {
     { table_name: 'users', table_schema: 'public' },
     { table_name: 'products', table_schema: 'public' },
   ];
+}
+
+// Add cleanup function
+export function closeDatabase(): void {
+  if (dbConnection) {
+    dbConnection.close();
+    dbConnection = null;
+    connectionPromise = null;
+  }
+}
+
+// Add event listener for page unload
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    closeDatabase();
+  });
 }

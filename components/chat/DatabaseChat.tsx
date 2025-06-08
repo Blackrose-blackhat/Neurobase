@@ -15,7 +15,7 @@ import {
 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { saveProject, getProject } from "@/lib/db";
+import { saveProject, getProject, closeDatabase } from "@/lib/db";
 
 import {
   Dialog,
@@ -68,7 +68,6 @@ export default function DatabaseChat({
   useEffect(() => {
     const loadChatHistory = async () => {
       if (initialLoadDone.current) return;
-
       try {
         const project = await getProject(projectId);
         if (project?.chatHistory?.messages) {
@@ -76,12 +75,18 @@ export default function DatabaseChat({
         }
       } catch (error) {
         console.error("Failed to load chat history:", error);
+        toast.error("Failed to load chat history. Please refresh the page.");
       } finally {
         initialLoadDone.current = true;
       }
     };
     loadChatHistory();
-  }, []);
+
+    // Cleanup on unmount
+    return () => {
+      closeDatabase();
+    };
+  }, [projectId]);
 
   useEffect(() => {
     scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -129,15 +134,11 @@ export default function DatabaseChat({
           chatHistory: { messages },
         });
         setHasUnsavedChanges(false);
-        toast.success("Chat saved successfully", {
-          icon: <CheckCircle className="h-4 w-4" />,
-        });
+        toast.success("Chat saved successfully");
       }
     } catch (error) {
       console.error("Failed to save chat history:", error);
-      toast.error("Failed to save chat", {
-        icon: <AlertCircle className="h-4 w-4" />,
-      });
+      toast.error("Failed to save chat. Please try again.");
     } finally {
       setIsSaving(false);
     }
