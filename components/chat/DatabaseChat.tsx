@@ -55,7 +55,7 @@ export default function DatabaseChat({
   const [tableViewState, setTableViewState] = useState<{
     [key: number]: TableViewState;
   }>({});
-  const scrollAnchorRef = useRef<HTMLDivElement>(null);
+  const scrollAnchorRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const [selectedRow, setSelectedRow] = useState<RowData | null>(null);
@@ -145,7 +145,7 @@ export default function DatabaseChat({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || !llmApiKey) return;
 
     const userMessage = input.trim();
     setInput("");

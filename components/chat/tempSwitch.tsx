@@ -30,7 +30,7 @@ export function TemporaryChatSwitch({ isTemporary, onToggle }: TemporaryChatSwit
             </TooltipTrigger>
             <TooltipContent>
               <p className="max-w-xs">
-                When enabled, chat messages won't be saved automatically. 
+                When enabled &rsquo; chat messages won&apos;t be saved automatically. 
                 You can still manually save the chat using the save button.
               </p>
             </TooltipContent>
