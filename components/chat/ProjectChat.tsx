@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getProject } from '@/lib/db';
 import DatabaseChat from '@/components/chat/DatabaseChat';
+import { Loader, LoaderPinwheel } from 'lucide-react';
+import { Spinner } from '../ui/ios-spinner';
 
 export default function ProjectChat({ id }: { id: string }) {
   const [project, setProject] = useState<any>(null);
@@ -33,7 +35,7 @@ export default function ProjectChat({ id }: { id: string }) {
     }
   }, [stableSchema]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div className='container mx-auto p-4 h-screen flex flex-col items-center'><Spinner size="lg" /></div>;
   if (!project) return <div>Project not found</div>;
 
   return (
