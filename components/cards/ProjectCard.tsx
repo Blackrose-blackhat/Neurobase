@@ -141,16 +141,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-8 w-8 z-10">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit Project
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+               
+               
                 <DropdownMenuItem
                   className="text-destructive focus:text-destructive"
                   onClick={() => setDeleteDialogOpen(true)}

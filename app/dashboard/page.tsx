@@ -138,7 +138,7 @@ const Page = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container px-4 py-8">
+      <main className=" px-4 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
           <h2 className="text-2xl font-semibold mb-2">Welcome to DB GPT</h2>
