@@ -59,17 +59,17 @@ export async function POST(req: NextRequest) {
 
     // Get the appropriate query representation based on agent type
     let query;
-    if (agent.constructor.name === 'MongoAgent') {
+    if (agent.type === 'MongoAgent') {
       const mongoPlan = plan as MongoStructredQueryPlan;
       query = mongoPlan.operation === 'find' ? mongoPlan.filter : mongoPlan.aggregatePipeline;
-    } else if (agent.constructor.name === 'PostgresAgent') {
+    } else if (agent.type === 'PostgresAgent') {
       const postgresPlan = plan as PostgresStructuredQueryPlan;
       query = postgresPlan.operation === 'select' ? postgresPlan.where : postgresPlan.fields;
     }
 
     return NextResponse.json({
       result,
-      agentType: agent.constructor.name,
+      agentType: agent.type,
       query,
     });
   } catch (err: any) {

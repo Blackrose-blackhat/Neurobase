@@ -3,6 +3,7 @@ import { Provider } from "../../types/modelType.type";
 import { generatePostgresPlan } from "../llm/generatePostgresPlan";
 
 export class PostgresAgent {
+  public readonly type = 'PostgresAgent';
   client: Client;
   dbName: string;
   connected: boolean = false;

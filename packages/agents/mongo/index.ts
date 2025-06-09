@@ -42,6 +42,7 @@ function inferFieldType(value: any, key = ""): FieldInfo {
 }
 
 export class MongoAgent {
+  public readonly type = 'MongoAgent';
   client: MongoClient;
   dbName: string;
 
