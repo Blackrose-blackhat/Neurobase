@@ -15,7 +15,7 @@ import {
 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { saveProject, getProject, closeDatabase } from "@/lib/db";
+import { saveProject, getProject, closeDatabase, ensureDatabaseReady, saveChatHistory } from "@/lib/db";
 
 import {
   Dialog,
@@ -24,7 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { addToChatContext } from "@/lib/chatContext";
+import { addToChatContext, getChatContext } from "@/lib/chatContext";
 import { Message } from "@/types/chat";
 import { TableViewState } from "@/types/table.types";
 import { DatabaseChatProps } from "@/types/dbConfig.types";
@@ -66,9 +66,10 @@ export default function DatabaseChat({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
-    const loadChatHistory = async () => {
+    const initializeAndLoadChat = async () => {
       if (initialLoadDone.current) return;
       try {
+        await ensureDatabaseReady();
         const project = await getProject(projectId);
         if (project?.chatHistory?.messages) {
           setMessages(project.chatHistory.messages);
@@ -80,9 +81,9 @@ export default function DatabaseChat({
         initialLoadDone.current = true;
       }
     };
-    loadChatHistory();
 
-    // Cleanup on unmount
+    initializeAndLoadChat();
+
     return () => {
       closeDatabase();
     };
@@ -127,15 +128,9 @@ export default function DatabaseChat({
     if (isSaving) return;
     setIsSaving(true);
     try {
-      const project = await getProject(projectId);
-      if (project) {
-        await saveProject({
-          ...project,
-          chatHistory: { messages },
-        });
-        setHasUnsavedChanges(false);
-        toast.success("Chat saved successfully");
-      }
+      await saveChatHistory(projectId, messages);
+      setHasUnsavedChanges(false);
+      toast.success("Chat saved successfully");
     } catch (error) {
       console.error("Failed to save chat history:", error);
       toast.error("Failed to save chat. Please try again.");
@@ -173,18 +168,29 @@ export default function DatabaseChat({
       };
       setMessages((prev) => [...prev, loadingMessage]);
 
-      const data = await getResponse(
-        llmApiKey,
-        userMessage,
-        dbUrl,
-        provider,
-        model,
-        schema,
-        dbType,
-        projectId
-      );
+      // Get chat context
+      const context = await getChatContext(projectId);
 
-      if (data.error) throw new Error(data.error);
+      // Make API call with proper headers
+      const response = await fetch('/api/operations/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-gemini-api-key': provider === 'gemini' ? llmApiKey : '',
+          'x-open-ai-api-key': provider === 'openai' ? llmApiKey : '',
+        },
+        body: JSON.stringify({
+          prompt: userMessage,
+          dbUrl,
+          provider,
+          model,
+          schema,
+          context,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
 
       const naturalLanguageResponse = await getNaturalLanguageResponse(
         data.result,

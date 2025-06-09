@@ -51,10 +51,13 @@ export function ChatTabs({
               Table View
             </TabsTrigger>
           )}
+          {hasData && (
+
           <TabsTrigger value="natural" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             Natural Language
           </TabsTrigger>
+          )}
         </TabsList>
 
         {hasData && (

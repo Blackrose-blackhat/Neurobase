@@ -16,12 +16,26 @@ export async function POST(req: NextRequest) {
       context = [],
     } = await req.json();
 
-    const geminiApiKey = req.headers.get("x-gemini-api-key") as string | undefined;
-    const openaiApiKey = req.headers.get("x-open-ai-api-key") as string | undefined;
+    // Get API keys from headers
+    const geminiApiKey = req.headers.get("x-gemini-api-key");
+    const openaiApiKey = req.headers.get("x-open-ai-api-key");
     const apiKey = provider === "gemini" ? geminiApiKey : openaiApiKey;
 
-    // Get the agent instance
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: `Missing API key for provider: ${provider}` },
+        { status: 400 }
+      );
+    }
+
+    // Get the agent instance based on database type
     const agent = await getAgentInstance(dbUrl);
+    if (!agent) {
+      return NextResponse.json(
+        { error: "Failed to initialize database agent" },
+        { status: 500 }
+      );
+    }
 
     // Generate plan with context
     const plan = await generatePlan(agent, {
@@ -30,11 +44,14 @@ export async function POST(req: NextRequest) {
       model,
       schema,
       apiKey,
-      context, // Pass context to the plan generator
+      context,
     });
 
     if (!agent.validate(plan)) {
-      return NextResponse.json({ error: "Invalid plan structure" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid plan structure" },
+        { status: 400 }
+      );
     }
 
     // Execute the plan
