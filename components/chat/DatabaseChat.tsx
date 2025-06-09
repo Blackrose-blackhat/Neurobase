@@ -124,7 +124,7 @@ export default function DatabaseChat({
     }));
   };
 
-  const saveChatHistory = async (projectId: string, messages: Message[]) => {
+  const handleSaveChat = async (projectId: string, messages: Message[]) => {
     if (isSaving) return;
     setIsSaving(true);
     try {
@@ -190,7 +190,7 @@ export default function DatabaseChat({
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error);
+      if (!response.ok) throw new Error(data.error || 'Failed to execute operation');
 
       const naturalLanguageResponse = await getNaturalLanguageResponse(
         data.result,
@@ -218,7 +218,7 @@ export default function DatabaseChat({
         if (!isTemporaryChat) {
           const assistantMessage = updated[updated.length - 1];
           addToChatContext(projectId, assistantMessage);
-          saveChatHistory(projectId, updated);
+          handleSaveChat(projectId, updated);
         }
         
         return updated;
@@ -227,15 +227,16 @@ export default function DatabaseChat({
       console.error("Error in handleSubmit:", error);
       const errorMessage: Message = {
         role: "assistant",
-        content: error.message,
+        content: `Error: ${error.message || 'An unexpected error occurred'}`,
         timestamp: Date.now(),
       };
       setMessages((prev) => {
-        const updated = [...prev, errorMessage];
+        // Remove the loading message and add the error message
+        const updated = prev.filter(msg => !msg.isStreaming).concat(errorMessage);
         
         if (!isTemporaryChat) {
           addToChatContext(projectId, errorMessage);
-          saveChatHistory(projectId, updated);
+          handleSaveChat(projectId, updated);
         }
         
         return updated;
@@ -252,7 +253,7 @@ export default function DatabaseChat({
 
   const handleSaveAndNavigate = async () => {
     try {
-      await saveChatHistory(projectId, messages);
+      await handleSaveChat(projectId, messages);
       setHasUnsavedChanges(false);
       router.push('/dashboard');
     } catch (error) {
@@ -294,7 +295,7 @@ export default function DatabaseChat({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => saveChatHistory(projectId, messages)}
+            onClick={() => handleSaveChat(projectId, messages)}
             disabled={isSaving || messages.length === 0}
             className="bg-background/50 hover:bg-background/80 border-border/50"
           >

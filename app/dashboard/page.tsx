@@ -20,12 +20,21 @@ import { Plus } from "lucide-react";
 
 const DB_NAME = "dbgpt";
 const STORE_NAME = "projects";
- // Use the same key as in db.ts
+const DB_VERSION = 1;
 
-
+async function initDB() {
+  const db = await openDB(DB_NAME, DB_VERSION, {
+    upgrade(db) {
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: "id" });
+      }
+    },
+  });
+  return db;
+}
 
 async function getAllProjectsDecoded(): Promise<ProjectData[]> {
-  const db = await openDB(DB_NAME, 1);
+  const db = await initDB();
   const tx = db.transaction(STORE_NAME, "readonly");
   const store = tx.objectStore(STORE_NAME);
   const all = await store.getAll();
@@ -46,6 +55,7 @@ async function getAllProjectsDecoded(): Promise<ProjectData[]> {
 const Page = () => {
   const [open, setOpen] = useState(false);
   const [projects, setProjects] = useState<ProjectData[]>([]);
+  const [isDBInitialized, setIsDBInitialized] = useState(false);
 
   const handleClose = () => {
     setOpen(false);
@@ -58,16 +68,28 @@ const Page = () => {
   };
 
   const handleDelete = async (id: string) => {
-    console.log("Deleting project with ID:", id);
-    const db = await openDB(DB_NAME, 1);
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    await tx.objectStore(STORE_NAME).delete(id);
-    await tx.done;
-    fetchProjects();
+    try {
+      const db = await initDB();
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      await tx.objectStore(STORE_NAME).delete(id);
+      await tx.done;
+      fetchProjects();
+    } catch (error) {
+      console.error("Error deleting project:", error);
+    }
   };
 
   useEffect(() => {
-    fetchProjects();
+    const initialize = async () => {
+      try {
+        await initDB();
+        setIsDBInitialized(true);
+        await fetchProjects();
+      } catch (error) {
+        console.error("Error initializing database:", error);
+      }
+    };
+    initialize();
   }, []);
 
   return (
@@ -77,7 +99,9 @@ const Page = () => {
         <div className="flex flex-row gap-2">
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button variant="default"><Plus /> Add New Project</Button>
+              <Button variant="default" disabled={!isDBInitialized}>
+                <Plus /> Add New Project
+              </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
