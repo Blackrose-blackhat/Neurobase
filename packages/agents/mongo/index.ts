@@ -132,8 +132,20 @@ export class MongoAgent {
           }
           return acc;
         }, {} as Record<string, any>);
+
+        // Handle projection correctly
+        let projection = plan.projection || {};
+        
+        // If we have any exclusions (0), we can't include _id: 0
+        const hasExclusions = Object.values(projection).some(v => v === 0);
+        
+        // If we have inclusions (1) or empty projection, we can exclude _id
+        if (!hasExclusions) {
+          projection = { ...projection, _id: 0 };
+        }
+
         res = await collection
-          .find(filter, { projection: plan.projection, ...plan.options })
+          .find(filter, { projection, ...plan.options })
           .toArray();
         break;
       }
