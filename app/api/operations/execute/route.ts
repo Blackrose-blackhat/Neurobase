@@ -1,81 +1,129 @@
+// app/api/debug/agents/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getAgentInstance } from "@/services/agentManager";
-import { generatePlan } from "@/services/planner";
-import { Message } from '@/types/chat';
-import { MongoStructredQueryPlan } from '@/packages/agents/mongo/types';
-import { PostgresStructuredQueryPlan } from '@/packages/agents/llm/generatePostgresPlan';
+import { debugGetAgent, inspectCache } from "@/services/agentManager";
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const {
-      prompt,
-      dbUrl,
-      provider,
-      model,
-      schema,
-      context = [],
-    } = await req.json();
+    const url = new URL(req.url);
+    const testUrl = url.searchParams.get('dbUrl') || 'mongodb://localhost:27017/test';
+    
+    console.log('Debug endpoint called with dbUrl:', testUrl);
 
-    // Get API keys from headers
-    const geminiApiKey = req.headers.get("x-gemini-api-key");
-    const openaiApiKey = req.headers.get("x-open-ai-api-key");
-    const apiKey = provider === "gemini" ? geminiApiKey : openaiApiKey;
+    // Test the getAgent function directly
+    const getAgentResult = await debugGetAgent(testUrl);
+    
+    // Inspect current cache
+    const cacheInfo = inspectCache();
 
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: `Missing API key for provider: ${provider}` },
-        { status: 400 }
-      );
+    // Test different URL formats
+    const urlTests = [
+      'mongodb://localhost:27017/test',
+      'mongodb+srv://user:pass@cluster.mongodb.net/db',
+      'postgresql://user:pass@localhost:5432/db',
+      'postgres://user:pass@localhost:5432/db',
+      'mysql://user:pass@localhost:3306/db'
+    ];
+
+    const urlTestResults = [];
+    for (const testDbUrl of urlTests) {
+      try {
+        const result = await debugGetAgent(testDbUrl);
+        urlTestResults.push({
+          url: testDbUrl.substring(0, 30) + '...',
+          result
+        });
+      } catch (error) {
+        urlTestResults.push({
+          url: testDbUrl.substring(0, 30) + '...',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
     }
 
-    // Get the agent instance based on database type
-    const agent = await getAgentInstance(dbUrl);
-    if (!agent) {
-      return NextResponse.json(
-        { error: "Failed to initialize database agent" },
-        { status: 500 }
-      );
-    }
-
-    // Generate plan with context
-    const plan = await generatePlan(agent, {
-      prompt,
-      provider,
-      model,
-      schema,
-      apiKey,
-      context,
-    });
-
-    if (!agent.validate(plan)) {
-      return NextResponse.json(
-        { error: "Invalid plan structure" },
-        { status: 400 }
-      );
-    }
-
-    // Execute the plan
-    const result = await agent.execute(plan);
-
-    // Get the appropriate query representation based on agent type
-    let query;
-    if (agent.constructor.name === 'MongoAgent') {
-      const mongoPlan = plan as MongoStructredQueryPlan;
-      query = mongoPlan.operation === 'find' ? mongoPlan.filter : mongoPlan.aggregatePipeline;
-    } else if (agent.constructor.name === 'PostgresAgent') {
-      const postgresPlan = plan as PostgresStructuredQueryPlan;
-      query = postgresPlan.operation === 'select' ? postgresPlan.where : postgresPlan.fields;
+    // Test import of getAgent function
+    let importTest;
+    try {
+      const { getAgent } = await import("@/packages/agents");
+      importTest = {
+        success: true,
+        type: typeof getAgent,
+        isFunction: typeof getAgent === 'function'
+      };
+    } catch (importError) {
+      importTest = {
+        success: false,
+        error: importError instanceof Error ? importError.message : 'Unknown error'
+      };
     }
 
     return NextResponse.json({
-      result,
-      agentType: agent.constructor.name,
-      query,
+      testUrl,
+      getAgentResult,
+      cacheInfo,
+      urlTestResults,
+      importTest,
+      environment: {
+        nodeEnv: process.env.NODE_ENV,
+        platform: process.platform,
+        nodeVersion: process.version
+      }
     });
-  } catch (err: any) {
-    console.error('Error executing operation:', err);
+
+  } catch (error) {
+    console.error('Error in debug endpoint:', error);
     return NextResponse.json(
-      { error: err.message || 'Failed to execute operation' },
+      { 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { dbUrl } = await req.json();
+    
+    if (!dbUrl) {
+      return NextResponse.json(
+        { error: 'dbUrl is required' },
+        { status: 400 }
+      );
+    }
+
+    console.log('Testing agent creation with provided dbUrl');
+    
+    // Test the full agent creation process
+    try {
+      const { getAgentInstance } = await import("@/services/agentManager");
+      const agent = await getAgentInstance(dbUrl);
+      
+      return NextResponse.json({
+        success: true,
+        agent: {
+          type: agent.constructor.name,
+          methods: Object.getOwnPropertyNames(Object.getPrototypeOf(agent)),
+          hasValidate: typeof agent.validate === 'function',
+          hasExecute: typeof agent.execute === 'function',
+          hasClose: typeof agent.close === 'function'
+        }
+      });
+      
+    } catch (agentError) {
+      return NextResponse.json({
+        success: false,
+        error: agentError instanceof Error ? agentError.message : 'Unknown error',
+        stack: agentError instanceof Error ? agentError.stack : undefined
+      });
+    }
+
+  } catch (error) {
+    return NextResponse.json(
+      { 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }
