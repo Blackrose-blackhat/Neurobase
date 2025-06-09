@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import { DataTable } from "./Table/DataTable";
 import { Message } from "@/types/chat";
 import { TableViewState } from "@/types/table.types";
+import { TextShimmerWave } from "../ui/text-shimmer-wave";
 
 interface ChatTabsProps {
   message: Message;
@@ -36,7 +37,16 @@ export function ChatTabs({
   if (isLoading) {
     return (
      
-        <LoaderPinwheelIcon className="h-5 w-5 animate-spin mr-2 bg-transparent text-primary" />
+      <TextShimmerWave
+      className='[--base-color:#0D74CE] [--base-gradient-color:#5EB1EF]'
+      duration={1}
+      spread={1}
+      zDistance={1}
+      scaleDistance={1.1}
+      rotateYDistance={20}
+    >
+      Thinking...
+    </TextShimmerWave>
      
     );
   }
