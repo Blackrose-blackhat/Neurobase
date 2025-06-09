@@ -76,24 +76,25 @@ export class PostgresAgent {
   async execute(plan: any): Promise<any> {
     await this.connectIfNeeded();
     let res;
+    let sqlQuery = "";
+
     switch (plan.operation) {
       case "select": {
         const where = plan.where || "TRUE";
-        // Fix: Use '*' if fields is missing or empty
         const fields =
           Array.isArray(plan.fields) && plan.fields.length > 0
             ? plan.fields.join(", ")
             : "*";
-        const query = `SELECT ${fields} FROM ${plan.table} WHERE ${where}`;
-        res = await this.client.query(query);
+        sqlQuery = `SELECT ${fields} FROM ${plan.table} WHERE ${where}`;
+        res = await this.client.query(sqlQuery);
         break;
       }
       case "insert": {
         const fields = Object.keys(plan.values);
         const values = Object.values(plan.values);
         const placeholders = fields.map((_, i) => `$${i + 1}`).join(", ");
-        const query = `INSERT INTO ${plan.table} (${fields.join(", ")}) VALUES (${placeholders}) RETURNING *`;
-        res = await this.client.query(query, values);
+        sqlQuery = `INSERT INTO ${plan.table} (${fields.join(", ")}) VALUES (${placeholders}) RETURNING *`;
+        res = await this.client.query(sqlQuery, values);
         break;
       }
       case "update": {
@@ -101,18 +102,18 @@ export class PostgresAgent {
           .map((k, i) => `${k} = $${i + 1}`)
           .join(", ");
         const values = Object.values(plan.values);
-        const query = `UPDATE ${plan.table} SET ${setFields} WHERE ${plan.where} RETURNING *`;
-        res = await this.client.query(query, values);
+        sqlQuery = `UPDATE ${plan.table} SET ${setFields} WHERE ${plan.where} RETURNING *`;
+        res = await this.client.query(sqlQuery, values);
         break;
       }
       case "delete": {
-        const query = `DELETE FROM ${plan.table} WHERE ${plan.where} RETURNING *`;
-        res = await this.client.query(query);
+        sqlQuery = `DELETE FROM ${plan.table} WHERE ${plan.where} RETURNING *`;
+        res = await this.client.query(sqlQuery);
         break;
       }
       default:
         throw new Error("Unsupported operation");
     }
-    return res.rows;
+    return { rows: res.rows, rawQuery: sqlQuery, queryType: "sql" };
   }
 }
