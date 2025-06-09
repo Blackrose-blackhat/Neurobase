@@ -3,6 +3,40 @@ import { getAgent } from "@/packages/agents";
 
 const agentCache: Record<string, any> = {};
 
+// Add agent type detection that works with minified code
+function getAgentType(agent: any): string {
+  // Method 1: Check for agent-specific properties/methods
+  if (agent.collection || agent.db || (agent.client && agent.client.topology)) {
+    return 'MongoAgent';
+  }
+  if (agent.pool || agent.query || (agent.client && agent.client.database)) {
+    return 'PostgresAgent';
+  }
+  if (agent.connection || (agent.client && agent.client.config && agent.client.config.host)) {
+    return 'MySQLAgent';
+  }
+  
+  // Method 2: Check constructor name if not minified
+  const constructorName = agent.constructor.name;
+  if (constructorName && constructorName !== 'u' && constructorName !== 'Object') {
+    return constructorName;
+  }
+  
+  // Method 3: Check agent's own type property if available
+  if (agent.type) {
+    return agent.type;
+  }
+  
+  // Method 4: Check prototype chain
+  const prototype = Object.getPrototypeOf(agent);
+  if (prototype && prototype.constructor && prototype.constructor.name !== 'u') {
+    return prototype.constructor.name;
+  }
+  
+  // Fallback
+  return 'UnknownAgent';
+}
+
 export async function getAgentInstance(dbUrl: string) {
   try {
     console.log('getAgentInstance called with dbUrl:', dbUrl ? `${dbUrl.substring(0, 20)}...` : 'undefined');
@@ -52,8 +86,14 @@ export async function getAgentInstance(dbUrl: string) {
     
     try {
       agentInstance = new AgentClass(dbUrl);
+      
+      // Set agent type explicitly to avoid minification issues
+      const detectedType = getAgentType(agentInstance);
+      agentInstance._agentType = detectedType;
+      
       console.log('Agent instance created successfully:', {
-        type: agentInstance.constructor.name,
+        type: detectedType,
+        originalConstructorName: agentInstance.constructor.name,
         hasValidate: typeof agentInstance.validate === 'function',
         hasExecute: typeof agentInstance.execute === 'function',
         hasClose: typeof agentInstance.close === 'function'
@@ -125,7 +165,7 @@ export async function closeAgent(dbUrl: string) {
   }
 }
 
-// Add a debug function to inspect the getAgent function
+// Enhanced debug function
 export async function debugGetAgent(dbUrl: string) {
   try {
     console.log('Testing getAgent function with dbUrl:', dbUrl);
@@ -179,7 +219,8 @@ export function inspectCache() {
     cacheSize: Object.keys(agentCache).length,
     agents: Object.keys(agentCache).map(key => ({
       key: key.substring(0, 20) + '...',
-      type: agentCache[key]?.constructor?.name || 'unknown'
+      type: getAgentType(agentCache[key]),
+      originalConstructorName: agentCache[key]?.constructor?.name || 'unknown'
     }))
   };
 }
