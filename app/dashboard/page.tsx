@@ -101,7 +101,7 @@ const Page = () => {
       <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 w-full ">
         <div className=" flex h-16 items-center justify-between px-4 w-full ">
           <Link href="/" className="flex items-center gap-2">
-            <Image src={logo} height={35} width={35} />
+            <Image src={logo} height={35} width={35} alt="DB GPT" />
             <h1 className="text-xl font-semibold">DB GPT</h1>
           </Link>
           
@@ -153,7 +153,7 @@ const Page = () => {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="col-span-full flex flex-col items-center justify-center p-8 text-center border-2 border-dashed rounded-lg bg-muted/50"
+              className="col-span-full flex flex-col items-center justify-center p-8 text-center  rounded-lg h-[70vh]"
             >
               <Database className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No Projects Yet</h3>

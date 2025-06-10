@@ -4,7 +4,9 @@ import React from "react";
 import { motion } from "motion/react";
 import { BrainCircuit, Database, Folder, HeartHandshakeIcon, SparklesIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-
+import Image from "next/image";
+import logo from "@/public/images/icon.png"
+import Logo from "@/public/images";
 interface DatabaseWithRestApiProps {
   className?: string;
   circleText?: string;
@@ -118,14 +120,14 @@ const DatabaseWithRestApi = ({
             ></rect>
             <DatabaseIcon x="18" y="7.5"></DatabaseIcon>
             <text
-              x="28"
+              x="25"
               y="12"
               fill="white"
               stroke="none"
               fontSize="5"
               fontWeight="500"
             >
-              {badgeTexts?.first || "GET"}
+              {badgeTexts?.first || "SELECT"}
             </text>
           </g>
           {/* Second Button */}
@@ -147,7 +149,7 @@ const DatabaseWithRestApi = ({
               fontSize="5"
               fontWeight="500"
             >
-              {badgeTexts?.second || "POST"}
+              {badgeTexts?.second || "DROP"}
             </text>
           </g>
           {/* Third Button */}
@@ -162,14 +164,14 @@ const DatabaseWithRestApi = ({
             ></rect>
             <DatabaseIcon x="112" y="7.5"></DatabaseIcon>
             <text
-              x="122"
+              x="120"
               y="12"
               fill="white"
               stroke="none"
               fontSize="5"
               fontWeight="500"
             >
-              {badgeTexts?.third || "PUT"}
+              {badgeTexts?.third || "UPDATE"}
             </text>
           </g>
           {/* Fourth Button */}
@@ -248,7 +250,7 @@ const DatabaseWithRestApi = ({
         </div>
         {/* box outter circle */}
         <div className="absolute -bottom-8 z-30 grid h-[60px] w-[60px] place-items-center rounded-full border-t bg-[#141516] font-semibold text-xs">
-          {circleText ? circleText : "SVG"}
+         <Logo />
         </div>
         {/* box content */}
         <div className="relative z-10 flex h-[150px] w-full items-center justify-center overflow-hidden rounded-lg border bg-background shadow-md">
