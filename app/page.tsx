@@ -4,6 +4,7 @@ import SectionWithMockup from "@/components/blocks/section-with-mockup";
 import { Features } from "@/components/blocks/features-8";
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 import { testimonials } from "@/lib/constants";
+import { Mockup1 } from "@/public/images";
 
 export default function Home() {
   return (
@@ -19,7 +20,7 @@ export default function Home() {
       <SectionWithMockup
         title="Transform Your Database Experience with AI"
         description="Interact with your databases using natural language. Get instant insights, generate SQL queries, and manage your data with AI-powered assistance. No more complex SQL syntax to remember."
-        primaryImageSrc="/images/database-interface.png"
+        primaryImageSrc="/images/mockup-1.png"
         secondaryImageSrc="/images/ai-chat.png"
       />
      <Features />

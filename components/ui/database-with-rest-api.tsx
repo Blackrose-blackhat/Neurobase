@@ -6,7 +6,7 @@ import { BrainCircuit, Database, Folder, HeartHandshakeIcon, SparklesIcon } from
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import logo from "@/public/images/icon.png"
-import Logo from "@/public/images";
+
 interface DatabaseWithRestApiProps {
   className?: string;
   circleText?: string;
@@ -250,7 +250,8 @@ const DatabaseWithRestApi = ({
         </div>
         {/* box outter circle */}
         <div className="absolute -bottom-8 z-30 grid h-[60px] w-[60px] place-items-center rounded-full border-t bg-[#141516] font-semibold text-xs">
-         <Logo />
+         <Image src={logo} alt="Logo" width={24} height={24} className="h-6 w-6" />
+          
         </div>
         {/* box content */}
         <div className="relative z-10 flex h-[150px] w-full items-center justify-center overflow-hidden rounded-lg border bg-background shadow-md">

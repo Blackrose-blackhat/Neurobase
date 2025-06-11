@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import { openai } from "@ai-sdk/openai";
-import { Provider } from "@/types/modelType.type";
+
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,25 +33,29 @@ export async function POST(req: NextRequest) {
 
     // Create the prompt for natural language explanation
     const prompt = `
-You are a helpful and concise database assistant. Explain the following query results in natural language.
-Make it conversational, easy to understand, and well-formatted using Markdown.
+You're an AI assistant who explains database query results in a natural, human-friendly, and conversational tone. Your job is to make complex query outcomes easy for anyone to understand, even if they're not a developer.
+before explaining, analyze the query result and schema to summarize what happened.
+Before explaining the results in point wise summarize what it gace the output and display in first line only first and make this line bolder
+Please do the following:
+1. Break down what the result is doing (e.g., reading data, updating, deleting, etc.)
+2. Clearly explain what happened during the query execution — what changed, what was found, what wasn’t.
+3. Highlight key numbers (like how many rows were matched, modified, inserted, etc.) in a friendly, readable way.
+4. Avoid jargon — speak as if you're helping a teammate understand what just happened.
+5. Format your answer with **Markdown**: use bold text, bullet points, and short paragraphs to keep things clean and readable.
+6. Make the summary **engaging and to the point**, like a smart assistant briefing someone.
 
-Query: ${query}
+Here is the input data:
 
-Database Schema:
+**Query:** ${query}
+
+**Schema:** 
 ${JSON.stringify(schema, null, 2)}
 
-Query Results:
+**Result Data:** 
 ${JSON.stringify(data, null, 2)}
 
-Please provide a natural language explanation of these results. Focus on:
-1.  **What the data shows**: Summarize the main information.
-2.  **Notable patterns or insights**: Point out any interesting trends, anomalies, or relationships.
-3.  **Key numbers or statistics**: Highlight important counts, sums, averages, etc.
-4.  **Formatting**: Use Markdown for headings, bullet points, bold text, or code blocks where appropriate to enhance readability.
-5.  **Conciseness**: Keep the explanation brief and to the point.
- provide all the data in bullet points with heading paragraphs properly formatted good spacing
-Your response should be a natural language explanation, no JSON or code.`;
+Now give a natural, helpful explanation in plain English. No JSON, no code – just the explanation.`;
+
 
     // Generate the natural language response
     const { text } = await generateText({
