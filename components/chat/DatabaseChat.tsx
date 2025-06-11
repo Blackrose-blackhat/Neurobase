@@ -36,6 +36,16 @@ import { ChatInput } from "./ChatInput";
 import { ChatScrollArea } from "./ChatScrollArea";
 import { TemporaryChatSwitch } from "./tempSwitch";
 import { motion } from "framer-motion";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 interface RowData {
   [key: string]: any;
@@ -75,6 +85,7 @@ export default function DatabaseChat({
   const initialLoadDone = useRef(false);
   const [isTemporaryChat, setIsTemporaryChat] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 
   useEffect(() => {
     const initializeAndLoadChat = async () => {
@@ -326,21 +337,7 @@ export default function DatabaseChat({
 
   const handleBack = () => {
     if (hasUnsavedChanges && !isTemporaryChat) {
-      toast.info("You have unsaved changes.", {
-        description: "Do you want to save your chat before leaving?",
-        duration: 5000,
-        action: {
-          label: "Save & Exit",
-          onClick: () => handleSaveAndNavigate(),
-        },
-        cancel: {
-          label: "Discard & Exit",
-          onClick: () => {
-            setHasUnsavedChanges(false);
-            router.push("/dashboard");
-          },
-        },
-      });
+      setShowLeaveDialog(true);
     } else {
       router.push("/dashboard");
     }
@@ -483,6 +480,37 @@ export default function DatabaseChat({
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. Do you want to save your chat before leaving?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setHasUnsavedChanges(false);
+                setShowLeaveDialog(false);
+                router.push("/dashboard");
+              }}
+            >
+              Discard & Exit
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                await handleSaveChat(projectId, messages);
+                setShowLeaveDialog(false);
+                router.push("/dashboard");
+              }}
+            >
+              Save & Exit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

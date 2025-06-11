@@ -39,6 +39,7 @@ export const metadata: Metadata = {
     description:
       "An intelligent database assistant powered by AI that helps you interact with your databases using natural language.",
     siteName: "DB GPT",
+   
   },
   twitter: {
     card: "summary_large_image",
