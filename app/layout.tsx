@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { siteMetaData } from "@/constants/metadata";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Neurobase - AI-Powered Database Assistant",
-  description:
-    "An intelligent database assistant powered by AI that helps you interact with your databases using natural language.",
+  title: siteMetaData.title,
+  description: siteMetaData.description,
   keywords: [
     "database",
     "AI",
@@ -33,20 +33,26 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    locale: "en_US",
-    url: "db-gpt-seven.vercel.app",
-    title: "Neurobase - AI-Powered Database Assistant",
-    description:
-      "An intelligent database assistant powered by AI that helps you interact with your databases using natural language.",
-    siteName: "Neurobase",
-   
+    locale: siteMetaData.locale,
+    url: siteMetaData.siteUrl,
+    title: siteMetaData.title,
+    description: siteMetaData.description,
+    siteName: siteMetaData.title,
+    images: [
+      {
+        url: siteMetaData.image,
+        width: 1200,
+        height: 630,
+        alt: siteMetaData.title,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Neurobase - AI-Powered Database Assistant",
-    description:
-      "An intelligent database assistant powered by AI that helps you interact with your databases using natural language.",
+    title: siteMetaData.title,
+    description: siteMetaData.description,
     creator: "@dbgpt",
+    images: [siteMetaData.socialBanner],
   },
   viewport: {
     width: "device-width",
@@ -64,10 +70,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang={siteMetaData.language}>
       <body className={inter.className}>
-        {" "}
-        <ThemeProvider attribute="class" defaultTheme="dark" >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme={siteMetaData.theme}
+          enableSystem
+          disableTransitionOnChange
+        >
           {children}
         </ThemeProvider>
       </body>
