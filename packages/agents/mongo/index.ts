@@ -120,6 +120,81 @@ export class MongoAgent {
     let res;
 
     switch (plan.operation) {
+      case "show_database": {
+        const collections = await db.collections();
+        const databaseOverview = await Promise.all(collections.map(async (col) => {
+          const count = await col.countDocuments();
+          const sampleDoc = await col.findOne({});
+          const fields = sampleDoc ? Object.keys(sampleDoc).filter(field => 
+            field !== '_id' && 
+            !field.includes('image') &&
+            !field.includes('password') &&
+            !field.includes('secret')
+          ) : [];
+          
+          // Get field priorities for this collection
+          const fieldPriorities = {
+            high: ['name', 'title', 'email', 'username', 'type', 'status', 'createdAt', 'updatedAt'],
+            medium: ['price', 'amount', 'quantity', 'category', 'tags', 'location'],
+            low: ['description', 'notes', 'details']
+          };
+
+          // Select important fields
+          const selectedFields = new Set<string>();
+          
+          // Add high priority fields
+          for (const field of fieldPriorities.high) {
+            if (fields.includes(field)) {
+              selectedFields.add(field);
+            }
+          }
+
+          // Add medium priority fields if needed
+          if (selectedFields.size < 3) {
+            for (const field of fieldPriorities.medium) {
+              if (fields.includes(field) && selectedFields.size < 4) {
+                selectedFields.add(field);
+              }
+            }
+          }
+
+          // Add low priority fields if still needed
+          if (selectedFields.size < 3) {
+            for (const field of fieldPriorities.low) {
+              if (fields.includes(field) && selectedFields.size < 4) {
+                selectedFields.add(field);
+              }
+            }
+          }
+
+          // If still no fields, take first 4
+          if (selectedFields.size === 0) {
+            fields.slice(0, 4).forEach(field => selectedFields.add(field));
+          }
+
+          // Get sample data with selected fields
+          const sampleData = await col.find({}, {
+            projection: Array.from(selectedFields).reduce((acc, field) => {
+              acc[field] = 1;
+              return acc;
+            }, {} as Record<string, 1>),
+            limit: 5
+          }).toArray();
+
+          return {
+            collection: col.collectionName,
+            documentCount: count,
+            importantFields: Array.from(selectedFields),
+            sampleData
+          };
+        }));
+
+        res = {
+          databaseName: this.dbName,
+          collections: databaseOverview
+        };
+        break;
+      }
       case "find": {
         let filter = plan.filter || {};
         // Iterate over each filter field
@@ -136,12 +211,68 @@ export class MongoAgent {
         // Handle projection correctly
         let projection = plan.projection || {};
         
-        // If we have any exclusions (0), we can't include _id: 0
-        const hasExclusions = Object.values(projection).some(v => v === 0);
-        
-        // If we have inclusions (1) or empty projection, we can exclude _id
-        if (!hasExclusions) {
-          projection = { ...projection, _id: 0 };
+        // If projection is empty, use smart field selection
+        if (Object.keys(projection).length === 0) {
+          // Get a sample document to analyze fields
+          const sampleDoc = await collection.findOne({});
+          if (sampleDoc) {
+            // Define field priorities and exclusions
+            const fieldPriorities = {
+              // High priority fields (always include if present)
+              high: ['name', 'title', 'email', 'username', 'type', 'status', 'createdAt', 'updatedAt'],
+              // Medium priority fields (include if not too many high priority fields)
+              medium: ['price', 'amount', 'quantity', 'category', 'tags', 'location'],
+              // Low priority fields (include only if needed to fill up to 4-5 fields)
+              low: ['description', 'notes', 'details']
+            };
+
+            // Get all fields from the document
+            const allFields = Object.keys(sampleDoc).filter(field => 
+              field !== '_id' && 
+              !field.includes('image') &&
+              !field.includes('password') &&
+              !field.includes('secret')
+            );
+
+            // Select fields based on priority
+            const selectedFields = new Set<string>();
+            
+            // First add high priority fields
+            for (const field of fieldPriorities.high) {
+              if (allFields.includes(field)) {
+                selectedFields.add(field);
+              }
+            }
+
+            // If we have less than 3 fields, add medium priority fields
+            if (selectedFields.size < 3) {
+              for (const field of fieldPriorities.medium) {
+                if (allFields.includes(field) && selectedFields.size < 4) {
+                  selectedFields.add(field);
+                }
+              }
+            }
+
+            // If we still have less than 3 fields, add low priority fields
+            if (selectedFields.size < 3) {
+              for (const field of fieldPriorities.low) {
+                if (allFields.includes(field) && selectedFields.size < 4) {
+                  selectedFields.add(field);
+                }
+              }
+            }
+
+            // If we still have no fields, add the first 4 non-excluded fields
+            if (selectedFields.size === 0) {
+              allFields.slice(0, 4).forEach(field => selectedFields.add(field));
+            }
+
+            // Create the projection
+            projection = Array.from(selectedFields).reduce((acc, field) => {
+              acc[field] = 1;
+              return acc;
+            }, {} as Record<string, 1>);
+          }
         }
 
         res = await collection

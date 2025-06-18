@@ -1,5 +1,5 @@
 export interface MongoStructredQueryPlan{
-    operation:'find' | 'aggregate' | 'count' | 'insert' | 'update' | 'delete';
+    operation:'find' | 'aggregate' | 'count' | 'insert' | 'update' | 'delete' | 'show_database';
     collection: string;
     filter?: Record<string, any>;
     projection?: Record<string,1|0>;

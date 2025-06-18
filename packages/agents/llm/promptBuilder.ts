@@ -36,10 +36,10 @@ Important notes:
 
 The query plan format:
 {
-  "operation": "find" | "aggregate" | "insert" | "update" | "delete",
+  "operation": "find" | "aggregate" | "insert" | "update" | "delete" | "show_database",
   "collection": "string",
   "filter": { ... },
-  "projection": { ... },
+  "projection": { field1: 1, field2: 1 },
   "options": { ... },
   "aggregatePipeline": [ ... ],
   "insertDoc": [ ... ],
@@ -49,9 +49,26 @@ The query plan format:
 User prompt: ${prompt}
 important : Take a good look at all the schema fields when a query appears to show all the data of a 
 praticular table or collection show only meaningful data like to get all users query probably show only 
-name email and other only 3-4 fields depening upon your priority we don't need to show id it is important to 
-how atleast name and email , do not show fields with large text like description or bio also do not show images
-also do not show any id or _id
+name email and other only 3-4 fields depening upon your priority. For projections:
+
+When user asks to "show whole database" or "show all collections":
+- Set operation to "show_database"
+- Set collection to any collection name (it will be ignored)
+- Do not set any other fields
+
+When user asks to "show all" or "show whole table" for a specific collection:
+- Set operation to "find"
+- Set filter to {} (empty object to get all documents)
+- Set projection to {} (empty object to let the system handle field selection)
+- Do not specify any fields in projection
+
+For other queries:
+- Use inclusion projection (field: 1) to explicitly specify which fields to include
+- Do not mix inclusion and exclusion in the same projection
+- Do not include _id in the projection unless specifically requested
+- Do not show fields with large text like description or bio
+- Do not show images
+
 Respond ONLY with the query plan JSON, no explanations.
 `.trim();
 }

@@ -1,9 +1,8 @@
-
 export interface TableViewState {
-    currentPage: number
-    itemsPerPage: number
+    page: number
+    pageSize: number
     searchTerm: string
     hiddenColumns: Set<string>
-    sortColumn: string | null
+    sortColumn: string
     sortDirection: 'asc' | 'desc'
   }

@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "DB GPT - AI-Powered Database Assistant",
+  title: "Neurobase - AI-Powered Database Assistant",
   description:
     "An intelligent database assistant powered by AI that helps you interact with your databases using natural language.",
   keywords: [
@@ -17,9 +17,9 @@ export const metadata: Metadata = {
     "database assistant",
     "natural language query",
   ],
-  authors: [{ name: "DB GPT Team" }],
-  creator: "DB GPT Team",
-  publisher: "DB GPT",
+  authors: [{ name: "Neurobase Team" }],
+  creator: "Neurobase Team",
+  publisher: "Neurobase",
   robots: {
     index: true,
     follow: true,
@@ -35,15 +35,15 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "db-gpt-seven.vercel.app",
-    title: "DB GPT - AI-Powered Database Assistant",
+    title: "Neurobase - AI-Powered Database Assistant",
     description:
       "An intelligent database assistant powered by AI that helps you interact with your databases using natural language.",
-    siteName: "DB GPT",
+    siteName: "Neurobase",
    
   },
   twitter: {
     card: "summary_large_image",
-    title: "DB GPT - AI-Powered Database Assistant",
+    title: "Neurobase - AI-Powered Database Assistant",
     description:
       "An intelligent database assistant powered by AI that helps you interact with your databases using natural language.",
     creator: "@dbgpt",
