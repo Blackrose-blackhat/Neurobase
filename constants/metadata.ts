@@ -5,8 +5,8 @@ export const siteMetaData = {
   theme: "dark",
   siteUrl: "neurobase-gpt.vercel.app",
   siteLogo: Logo.src,
-  image: "neurobase-gpt.vercel.app/images/opengraph.png",
-  socialBanner: "neurobase-gpt.vercel.app/images/opengraph.png",
+  image: "/images/opengraph.png",
+  socialBanner: "/images/opengraph.png",
   locale: "en-US",
   language: "en-us",
   description:
