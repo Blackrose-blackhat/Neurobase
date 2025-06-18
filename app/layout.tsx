@@ -44,6 +44,7 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         alt: siteMetaData.title,
+        type: "image/png",
       },
     ],
   },
@@ -53,6 +54,7 @@ export const metadata: Metadata = {
     description: siteMetaData.description,
     creator: "@dbgpt",
     images: [siteMetaData.socialBanner],
+    site: "@dbgpt",
   },
   viewport: {
     width: "device-width",
