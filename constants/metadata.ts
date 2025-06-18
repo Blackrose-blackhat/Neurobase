@@ -5,8 +5,8 @@ export const siteMetaData = {
   theme: "dark",
   siteUrl: "https://db-gpt-seven.vercel.app",
   siteLogo: Logo.src,
-  image: "/images/opengraph.png",
-  socialBanner: "/images/opengraph.png", // assuming it's in /public root
+  image: "https://db-gpt-seven.vercel.app/images/opengraph.png",
+  socialBanner: "https://db-gpt-seven.vercel.app/images/opengraph.png",
   locale: "en-US",
   language: "en-us",
   description:
