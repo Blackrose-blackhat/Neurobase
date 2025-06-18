@@ -1,6 +1,6 @@
 {
-  "name": "DB GPT",
-  "short_name": "DB GPT",
+  "name": "Neurobase",
+  "short_name": "Neurobase",
   "description": "AI-Powered Database Assistant",
   "start_url": "/",
   "display": "standalone",

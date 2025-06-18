@@ -101,8 +101,8 @@ const Page = () => {
       <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 w-full ">
         <div className=" flex h-16 items-center justify-between px-4 w-full ">
           <Link href="/" className="flex items-center gap-2">
-            <Image src={logo} height={35} width={35} alt="DB GPT" />
-            <h1 className="text-xl font-semibold">DB GPT</h1>
+            <Image src={logo} height={35} width={35} alt="Neurobase" />
+            <h1 className="text-xl font-semibold">Neurobase</h1>
           </Link>
           
           <div className="flex items-center gap-4">
@@ -141,7 +141,7 @@ const Page = () => {
       <main className=" px-4 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-2">Welcome to DB GPT</h2>
+          <h2 className="text-2xl font-semibold mb-2">Welcome to Neurobase</h2>
           <p className="text-muted-foreground">
             Manage your AI-powered database projects and start chatting with your data
           </p>
@@ -193,7 +193,7 @@ const Page = () => {
       {/* <footer className="border-t border-border/40 mt-auto">
         <div className=" flex h-14 items-center justify-between px-4">
           <p className="text-sm text-muted-foreground">
-            © 2024 DB GPT. All rights reserved.
+            © 2024 Neurobase. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <Button variant="link" size="sm" asChild>
