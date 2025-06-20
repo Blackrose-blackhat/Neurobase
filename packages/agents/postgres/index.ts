@@ -7,6 +7,7 @@ export class PostgresAgent {
   client: Client;
   dbName: string;
   connected: boolean = false;
+  private tableNameMap: Record<string, string> = {};
 
   constructor(dbUrl: string) {
     this.client = new Client({ connectionString: dbUrl });
@@ -36,8 +37,11 @@ export class PostgresAgent {
       WHERE table_schema = 'public'
     `);
     const schema: Record<string, any> = {};
+    this.tableNameMap = {};
+
     for (const row of tablesRes.rows) {
       const table = row.table_name;
+      this.tableNameMap[table.toLowerCase()] = table;
       const columnsRes = await this.client.query(`
         SELECT column_name, data_type
         FROM information_schema.columns
@@ -79,6 +83,9 @@ export class PostgresAgent {
     let res;
     let sqlQuery = "";
 
+    const actualTableName = this.getActualTableName(plan.table);
+    const quotedTableName = `"${actualTableName}"`;
+
     switch (plan.operation) {
       case "select": {
         const where = plan.where || "TRUE";
@@ -86,7 +93,7 @@ export class PostgresAgent {
           Array.isArray(plan.fields) && plan.fields.length > 0
             ? plan.fields.join(", ")
             : "*";
-        sqlQuery = `SELECT ${fields} FROM ${plan.table} WHERE ${where}`;
+        sqlQuery = `SELECT ${fields} FROM ${quotedTableName} WHERE ${where}`;
         res = await this.client.query(sqlQuery);
         break;
       }
@@ -94,7 +101,7 @@ export class PostgresAgent {
         const fields = Object.keys(plan.values);
         const values = Object.values(plan.values);
         const placeholders = fields.map((_, i) => `$${i + 1}`).join(", ");
-        sqlQuery = `INSERT INTO ${plan.table} (${fields.join(", ")}) VALUES (${placeholders}) RETURNING *`;
+        sqlQuery = `INSERT INTO ${quotedTableName} (${fields.join(", ")}) VALUES (${placeholders}) RETURNING *`;
         res = await this.client.query(sqlQuery, values);
         break;
       }
@@ -103,12 +110,12 @@ export class PostgresAgent {
           .map((k, i) => `${k} = $${i + 1}`)
           .join(", ");
         const values = Object.values(plan.values);
-        sqlQuery = `UPDATE ${plan.table} SET ${setFields} WHERE ${plan.where} RETURNING *`;
+        sqlQuery = `UPDATE ${quotedTableName} SET ${setFields} WHERE ${plan.where} RETURNING *`;
         res = await this.client.query(sqlQuery, values);
         break;
       }
       case "delete": {
-        sqlQuery = `DELETE FROM ${plan.table} WHERE ${plan.where} RETURNING *`;
+        sqlQuery = `DELETE FROM ${quotedTableName} WHERE ${plan.where} RETURNING *`;
         res = await this.client.query(sqlQuery);
         break;
       }
@@ -116,5 +123,9 @@ export class PostgresAgent {
         throw new Error("Unsupported operation");
     }
     return { rows: res.rows, rawQuery: sqlQuery, queryType: "sql" };
+  }
+
+  private getActualTableName(requested: string): string {
+    return this.tableNameMap[requested.toLowerCase()] || requested;
   }
 }
