@@ -32,7 +32,7 @@ Neurobase lets you **query your database in plain English** — no SQL required.
 
 ## 📸 Preview
 
-![Neurobase Screenshot](/Screenshot From 2025-07-28 12-48-46.png) <!-- Replace with actual image path -->
+![Neurobase Screenshot](./Screenshot From 2025-07-28 12-48-46.png) <!-- Replace with actual image path -->
 
 ---
 
